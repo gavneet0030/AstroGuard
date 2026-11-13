@@ -1,0 +1,1 @@
+﻿"""AstroGuard mission data acquisition."""

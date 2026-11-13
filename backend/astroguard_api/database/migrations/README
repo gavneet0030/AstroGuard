@@ -1,0 +1,12 @@
+AstroGuard migration directory.
+
+Generate migration:
+python -m alembic revision --autogenerate -m "describe change"
+
+Apply:
+python -m alembic upgrade head
+
+Rollback one revision:
+python -m alembic downgrade -1
+
+Use migrations for shared and production databases.
