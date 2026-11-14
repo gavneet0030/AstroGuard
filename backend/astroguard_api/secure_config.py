@@ -470,7 +470,10 @@ def build_settings(
         "NASA_API_BASE_URL",
     )
 
-    database_url = _get(source, "DATABASE_URL")
+    database_url = (
+        _get(source, "DATABASE_URL")
+        or _get(source, "ASTROGUARD_DATABASE_URL")
+    )
     redis_url = _get(source, "REDIS_URL")
 
     return SecureSettings(

@@ -26,22 +26,39 @@ class Base(DeclarativeBase):
     pass
 
 
-def resolve_database_url() -> str:
-    configured = os.getenv("ASTROGUARD_DATABASE_URL", "").strip()
+def normalize_database_url(database_url: str) -> str:
+    """Normalize PostgreSQL aliases to SQLAlchemy's psycopg 3 dialect."""
+    if not isinstance(database_url, str) or not database_url.strip():
+        raise ValueError("Database URL must be a non-empty string.")
+    url = database_url.strip()
+    aliases = (
+        ("postgres://", "postgresql+psycopg://"),
+        ("postgresql://", "postgresql+psycopg://"),
+        ("postgresql+psycopg2://", "postgresql+psycopg://"),
+    )
+    for prefix, replacement in aliases:
+        if url.startswith(prefix):
+            return replacement + url[len(prefix):]
+    return url
 
+
+def resolve_database_url(environ: dict[str, str] | None = None) -> str:
+    """Prefer DATABASE_URL; retain ASTROGUARD_DATABASE_URL as legacy fallback."""
+    source = os.environ if environ is None else environ
+    configured = str(source.get("DATABASE_URL", "")).strip()
+    if not configured:
+        configured = str(source.get("ASTROGUARD_DATABASE_URL", "")).strip()
     if configured:
-        return configured
+        return normalize_database_url(configured)
 
     project_root = Path(__file__).resolve().parents[3]
     database_dir = project_root / "artifacts" / "database"
     database_dir.mkdir(parents=True, exist_ok=True)
-
     database_file = database_dir / "astroguard.db"
     return f"sqlite:///{database_file.as_posix()}"
 
-
 def build_engine(database_url: str | None = None):
-    url = database_url or resolve_database_url()
+    url = normalize_database_url(database_url) if database_url else resolve_database_url()
 
     options = {"pool_pre_ping": True}
 
