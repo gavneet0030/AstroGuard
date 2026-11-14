@@ -290,6 +290,7 @@ class TelemetryProducer:
         max_message_bytes: int = DEFAULT_MAX_MESSAGE_BYTES,
         timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
         batch_size: int = DEFAULT_BATCH_SIZE,
+        metrics: Any | None = None,
     ) -> None:
         if broker is None:
             raise ValueError("broker is required.")
@@ -308,6 +309,7 @@ class TelemetryProducer:
         self.max_message_bytes = int(max_message_bytes)
         self.timeout_seconds = float(timeout_seconds)
         self.batch_size = int(batch_size)
+        self._metrics = metrics
 
         signature = inspect.signature(publish)
         parameters = [
@@ -384,6 +386,11 @@ class TelemetryProducer:
         document = deserialize_event(encoded)
 
         result = await self._call_broker(selected_topic, event)
+
+        if self._metrics is not None:
+            increment = getattr(self._metrics, "increment", None)
+            if callable(increment):
+                increment("published")
 
         return PublishResult(
             event_id=document["event_id"],

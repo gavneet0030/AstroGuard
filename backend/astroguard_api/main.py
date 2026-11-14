@@ -82,9 +82,19 @@ app = FastAPI(
 )
 
 
+# Phase 6.5: preserve configured origins and explicitly support
+# both local frontend development origins.
+_ASTROGUARD_CORS_ORIGINS = sorted(
+    set(settings.cors_origins)
+    | {
+        "http://127.0.0.1:3000",
+        "http://localhost:3000",
+    }
+)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=_ASTROGUARD_CORS_ORIGINS,
     allow_credentials=False,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
